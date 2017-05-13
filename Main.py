@@ -37,8 +37,10 @@ def register_user(id=None):
     fcmToken = request.args.get('fcm_token')
     json = {
         "email": email,
-        "lat": lat,
-        "lon": lon,
+        "location": {
+            "lat": request.args.get("lat"),
+            "lon": request.args.get("lon")
+        },
         "fcm_token": fcmToken
     }
     r = requests.put(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
@@ -61,8 +63,10 @@ def answer(user_id=None, complain_id=None):
     url = BDDD_URL + "complains/" + complain_id + "/answers/" + str(uuid.uuid4()) + ".json?auth=" + API_KEY
     json = {
         "answer": request.args.get('answer'),
-        "lat": request.args.get("lat"),
-        "lon": request.args.get("lon"),
+        "location": {
+            "lat": request.args.get("lat"),
+            "lon": request.args.get("lon")
+        },
         "userID": user_id
     }
     r = requests.put(url=url, json=json, headers=HEADERS)
