@@ -44,13 +44,27 @@ def register_user(id=None):
     return response
 
 
-@app.route("/users/:ID/complains")
-def register_user2():
-    # sacar ID
-    # sacar email
-    # sacar lat, lon
-    # enviarlos en POST
-    r = requests.post(BDDD_URL + "users/" + ID)
+@app.route("/users/<id>/complains", methods=['POST'])
+def create_complain(id=None):
+    identifier = id
+    image_url = ""
+    if "image_url" in request.args:
+        image_url = request.args.get('image_url')
+    title = request.args.get('title')
+    location = {}
+    location['lat'] = request.args.get('lat')
+    location['lon'] = request.args.get('lon')
+
+    json = {
+        "image_url": image_url,
+        "location": location,
+        "title": title,
+        "user_id": identifier
+    }
+    r = requests.post(BDDD_URL + "/complains.json?auth=" + API_KEY, json=json, headers=HEADERS)
+    response = Response(r.text)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 @app.route("/users/:ID/complains/:complainID/answer")
