@@ -31,6 +31,21 @@ def register_user():
     # enviarlos en POST
     r = requests.post(BDDD_URL + "users/" + ID)
 
+@app.route("/users/:ID/complains")
+def register_user():
+    # sacar ID
+    # sacar email
+    # sacar lat, lon
+    # enviarlos en POST
+    r = requests.post(BDDD_URL + "users/" + ID)
+
+@app.route("/users/:ID/complains/:complainID/answer")
+def register_user():
+    # sacar ID
+    # sacar email
+    # sacar lat, lon
+    # enviarlos en POST
+    r = requests.post(BDDD_URL + "users/" + ID)
 
 def main():
     app.run()
