@@ -33,10 +33,12 @@ def register_user(id=None):
     email = request.args.get('email')
     lat = request.args.get('lat')
     lon = request.args.get('lon')
+    fcmToken = request.args.get('fcm_token')
     json = {
         "email": email,
         "lat":lat,
-        "lon":lon
+        "lon":lon,
+        "fcm_token": fcmToken
     }
     r = requests.put(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
     response = Response(r.text)
