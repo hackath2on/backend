@@ -14,9 +14,18 @@ BDDD_URL = 'https://hackath2on-562dd.firebaseio.com/'
 def hello():
     return "Hello World!"
 
-def sampleGET():
+@app.route("/sampleGET")
+def sample_get():
     r = requests.get(BDDD_URL + "users/SAMPLEID")
     #tratar objecto request "r"
+
+@app.route("/users/:ID")
+def register_user():
+    # sacar ID
+    # sacar email
+    # sacar lat, lon
+    # enviarlos en POST
+    r = requests.post(BDDD_URL + "users/" + ID)
 
 
 def main():
