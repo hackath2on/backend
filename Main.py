@@ -1,4 +1,5 @@
 from flask import Flask
+import requests
 app = Flask(__name__)
 
 API_KEY = 'FMnkufGpV3xvG9R2jQKjeVIi85nW5EIOP5sB5c2N'
@@ -12,6 +13,10 @@ BDDD_URL = 'https://hackath2on-562dd.firebaseio.com/'
 @app.route("/")
 def hello():
     return "Hello World!"
+
+def sampleGET():
+    r = requests.get(BDDD_URL + "users/SAMPLEID")
+    #tratar objecto request "r"
 
 
 def main():
