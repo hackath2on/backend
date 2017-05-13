@@ -1,5 +1,7 @@
 from flask import Flask
 from flask import request
+from flask import Response
+
 import requests
 
 app = Flask(__name__)
@@ -36,8 +38,10 @@ def register_user(id=None):
         "lat":lat,
         "lon":lon
     }
-    r = requests.post(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
-    return r.json()
+    r = requests.put(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
+    response = Response(r.text)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 @app.route("/users/:ID/complains")
