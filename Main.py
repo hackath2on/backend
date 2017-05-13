@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import request
 import requests
 
 app = Flask(__name__)
@@ -6,6 +7,7 @@ app = Flask(__name__)
 API_KEY = 'FMnkufGpV3xvG9R2jQKjeVIi85nW5EIOP5sB5c2N'
 PROJECT_ID = 'hackath2on-562dd'
 BDDD_URL = 'https://hackath2on-562dd.firebaseio.com/'
+HEADERS = {'Authorization': 'Bearer ' + API_KEY}
 
 
 # Todas las requests tienen que tener este formato
@@ -23,29 +25,39 @@ def sample_get():
     # tratar objecto request "r"
 
 
-@app.route("/users/:ID")
-def register_user():
-    # sacar ID
-    # sacar email
-    # sacar lat, lon
-    # enviarlos en POST
-    r = requests.post(BDDD_URL + "users/" + ID)
+@app.route("/users/<id>", methods=['POST'])
+def register_user(id=None):
+    identifier = id
+    email = request.args.get('email')
+    lat = request.args.get('lat')
+    lon = request.args.get('lon')
+    json = {
+        "email": email,
+        "lat":lat,
+        "lon":lon
+    }
+    headers = {'Authorization': 'Bearer ' + API_KEY}
+    r = requests.post(BDDD_URL + "users/" + identifier + ".json?access_token=" + API_KEY , json=json, headers=headers)
+    return r.json()
+
 
 @app.route("/users/:ID/complains")
-def register_user():
+def register_user2():
     # sacar ID
     # sacar email
     # sacar lat, lon
     # enviarlos en POST
     r = requests.post(BDDD_URL + "users/" + ID)
 
+
 @app.route("/users/:ID/complains/:complainID/answer")
-def register_user():
+def register_user3():
     # sacar ID
     # sacar email
     # sacar lat, lon
     # enviarlos en POST
     r = requests.post(BDDD_URL + "users/" + ID)
+
 
 def main():
     app.run()
