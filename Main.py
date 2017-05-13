@@ -36,8 +36,7 @@ def register_user(id=None):
         "lat":lat,
         "lon":lon
     }
-    headers = {'Authorization': 'Bearer ' + API_KEY}
-    r = requests.post(BDDD_URL + "users/" + identifier + ".json?access_token=" + API_KEY , json=json, headers=headers)
+    r = requests.post(BDDD_URL + "users/" + identifier + ".json", json=json, headers=HEADERS)
     return r.json()
 
 
