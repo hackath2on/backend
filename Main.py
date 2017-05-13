@@ -56,16 +56,19 @@ def register_user2():
     pass
 
 
-@app.route("/users/<user_id>/complains/<complain_id>/answer", methods=['POST'])
+@app.route("/users/<user_id>/complains/<complain_id>/answers", methods=['POST'])
 def answer(user_id=None, complain_id=None):
-    url = BDDD_URL + "complaints/" + complain_id + "/answers/" + str(uuid.uuid4()) + ".json?auth=" + API_KEY
+    url = BDDD_URL + "complains/" + complain_id + "/answers/" + str(uuid.uuid4()) + ".json?auth=" + API_KEY
     json = {
-        "answer", request.args.get('answer'),
-        "lat", request.args.get("lat"),
-        "lon", request.args.get("lon"),
-        "userID", user_id
+        "answer": request.args.get('answer'),
+        "lat": request.args.get("lat"),
+        "lon": request.args.get("lon"),
+        "userID": user_id
     }
     r = requests.put(url=url, json=json, headers=HEADERS)
+    response = Response(r.text)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 def main():
