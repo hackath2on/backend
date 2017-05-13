@@ -1,97 +1,77 @@
-from flask import Flask
+from flask import Flask, json
 from flask import request
-from flask import Response
-import uuid
-
-import requests
+from flask import json
+from flask import make_response
+import requests as req
 
 app = Flask(__name__)
 
-API_KEY = 'FMnkufGpV3xvG9R2jQKjeVIi85nW5EIOP5sB5c2N'
-PROJECT_ID = 'hackath2on-562dd'
-BDDD_URL = 'https://hackath2on-562dd.firebaseio.com/'
-HEADERS = {'Authorization': 'Bearer ' + API_KEY}
-
-
-# Todas las requests tienen que tener este formato
-# 'https://hackath2on-562dd.firebaseio.com/entity.json?access_token=FMnkufGpV3xvG9R2jQKjeVIi85nW5EIOP5sB5c2N'
+BASE_URL = "http://marketdata.websol.barchart.com/"
+KEY = "b1a585d027c8d89fa27ccd3628609739"
+GET_QUOTE = "getQuote.json"
+SYMBOLS = "symbols"
 
 
 @app.route("/")
 def hello():
-    return "Hello World!"
+    return 'Hello, world!'
 
 
-@app.route("/sampleGET")
-def sample_get():
-    r = requests.get(BDDD_URL + "users/SAMPLEID")
-    # tratar objecto request "r"
+@app.route("/webhook", methods=['POST'])
+def handle():
+    speech = ""
+    body = request.json
+    action = body['result']['action']
 
+    if action == 'SEARCH':
+        params = body['result']['parameters']
+        qs = []
+        for key in params:
+            if 'Param' in key:
+                qs.append(params[key])
+        symbols = ''
+        symbol_first = True
+        for key in params:
 
-@app.route("/users/<id>", methods=['POST'])
-def register_user(id=None):
-    identifier = id
-    email = request.args.get('email')
-    lat = request.args.get('lat')
-    lon = request.args.get('lon')
-    fcmToken = request.args.get('fcm_token')
-    json = {
-        "email": email,
-        "location": {
-            "lat": request.args.get("lat"),
-            "lon": request.args.get("lon")
-        },
-        "fcm_token": fcmToken
+            if 'Symbol' in key:
+                if symbol_first:
+                    symbol_first = False
+                    symbols = symbols + params[key]
+                else:
+                    symbols = symbols + ',' + params[key]
+
+        resp = req.get(BASE_URL + GET_QUOTE, params={'key': KEY, 'symbols': symbols})
+        print(resp.text)
+        json_response = resp.json()
+
+        for unit_resp in json_response['results']:
+            speech = speech + " For {} ".format(unit_resp['name'])
+            qs = list(filter((lambda x: x != ""), qs))
+            if len(qs) == 0:
+                speech = 'What do you want to know about {}'.format(unit_resp['name'])
+            else:
+                for qs_elem in qs:
+                    qs_elem_text = qs_elem
+                    if qs_elem == 'lastPrice':
+                        qs_elem_text = "last price"
+                    if qs_elem == 'netChange':
+                        qs_elem_text = "net change"
+                    if qs_elem is not None and qs_elem != "":
+                        speech = speech + " the {} is {}".format(qs_elem_text, unit_resp[qs_elem])
+
+    data = {
+        "speech": speech,
+        "displayText": speech,
     }
-    r = requests.put(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
-    response = Response(r.text)
-    response.headers['Content-Type'] = 'application/json'
-    return response
+    js = json.dumps(data)
+    r = make_response(js)
+    r.headers['Content-Type'] = 'application/json'
+    return r
 
 
-@app.route("/users/<id>/complains", methods=['POST'])
-def create_complain(id=None):
-    identifier = id
-    image_url = ""
-    if "image_url" in request.args:
-        image_url = request.args.get('image_url')
-    title = request.args.get('title')
-    location = {}
-    location['lat'] = request.args.get('lat')
-    location['lon'] = request.args.get('lon')
-
-    json = {
-        "image_url": image_url,
-        "location": location,
-        "title": title,
-        "user_id": identifier
-    }
-    r = requests.post(BDDD_URL + "/complains.json?auth=" + API_KEY, json=json, headers=HEADERS)
-    response = Response(r.text)
-    response.headers['Content-Type'] = 'application/json'
-    return response
-
-
-@app.route("/users/<user_id>/complains/<complain_id>/answers", methods=['POST'])
-def answer(user_id=None, complain_id=None):
-    url = BDDD_URL + "complains/" + complain_id + "/answers/" + str(uuid.uuid4()) + ".json?auth=" + API_KEY
-    json = {
-        "answer": request.args.get('answer'),
-        "location": {
-            "lat": request.args.get("lat"),
-            "lon": request.args.get("lon")
-        },
-        "userID": user_id
-    }
-    r = requests.put(url=url, json=json, headers=HEADERS)
-    response = Response(r.text)
-    response.headers['Content-Type'] = 'application/json'
-    return response
-
-
-def main():
-    app.run()
+# Request a la API de STOCK
+# r = re.get(BASE_URL + GET_QUOTE, params={'key': KEY, 'symbols': symbol})
 
 
 if __name__ == '__main__':
-    main()
+    app.run(port=4000)
