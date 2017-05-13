@@ -36,7 +36,7 @@ def register_user(id=None):
         "lat":lat,
         "lon":lon
     }
-    r = requests.post(BDDD_URL + "users/" + identifier + ".json", json=json, headers=HEADERS)
+    r = requests.post(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
     return r.json()
 
 
