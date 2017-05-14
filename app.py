@@ -13,6 +13,9 @@ PROJECT_ID = 'hackath2on-562dd'
 BDDD_URL = 'https://hackath2on-562dd.firebaseio.com/'
 HEADERS = {'Authorization': 'Bearer ' + API_KEY}
 ELASTIC_SEARCH_BASE = "http://localhost:9200"
+FCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send"
+FCM_KEY = "AAAA5tiS97s:APA91bFChyk3Os5PKynuszNLi6r9VXZXPUsmlLibhA9QGPbHweQ-sLnjozjWUq2DdD7eKgNtJKSXfcYjDQGAFAMuCYFTsUaBjl9iH4wEzT55bAY-MaAK-DoNMCQL1lOZaEJpJ0siJBJu"
+HEADER_FCM = {"Authorization": "key=" + FCM_KEY, "Content-Type": "application/json"}
 
 
 # Todas las requests tienen que tener este formato
@@ -28,6 +31,68 @@ def hello():
 def sample_get():
     r = requests.get(BDDD_URL + "users/SAMPLEID")
     # tratar objecto request "r"
+
+
+def send_push_notification(title, body, fcm_token):
+    json = {
+        "to": fcm_token,
+        "notification": {
+            "body": body,
+            "title": title
+        }
+    }
+    r = requests.post(FCM_ENDPOINT, headers=HEADER_FCM, json=json)
+    print(r.text)
+
+
+@app.route("/notifications", methods=['POST'])
+def get_close_users():
+    lat = request.args.get("lat")
+    lon = request.args.get("lon")
+    radius = request.args.get("radius")
+    title = request.args.get("title")
+    body = request.args.get("body")
+    query = {
+        "sort": [
+            {
+                "_geo_distance": {
+                    "location": {
+                        "lat": lat,
+                        "lon": lon
+                    },
+                    "order": "asc",
+                    "unit": "m"
+                }
+            }
+        ],
+        "from": 0,
+        "size": 10000,
+        "query": {
+            "bool": {
+                "filter": {
+                    "geo_distance": {
+                        "distance": str(radius) + "m",
+                        "location": {
+                            "lat": lat,
+                            "lon": lon
+                        }
+                    }
+                }
+            }
+        }
+    }
+    r = requests.post(ELASTIC_SEARCH_BASE + "/users/_search", json=query)
+    response = Response(r.text)
+    response.headers['Content-Type'] = 'application/json'
+
+    json = r.json()
+    hits = json["hits"]["hits"]
+    for hit in hits:
+        fcm_token = hit["_source"]["fcm_token"]
+        send_push_notification(title, body, fcm_token)
+    response = Response(str(200))
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 
 def post_user_es(id, params):
