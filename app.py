@@ -16,6 +16,8 @@ ELASTIC_SEARCH_BASE = "http://localhost:9200"
 FCM_ENDPOINT = "https://fcm.googleapis.com/fcm/send"
 FCM_KEY = "AAAA5tiS97s:APA91bFChyk3Os5PKynuszNLi6r9VXZXPUsmlLibhA9QGPbHweQ-sLnjozjWUq2DdD7eKgNtJKSXfcYjDQGAFAMuCYFTsUaBjl9iH4wEzT55bAY-MaAK-DoNMCQL1lOZaEJpJ0siJBJu"
 HEADER_FCM = {"Authorization": "key=" + FCM_KEY, "Content-Type": "application/json"}
+COMPLAINTS_NOTIFICATION_THRESHOLD = 0
+COMPLAINTS_NOTIFICATION_RADIUS = 200
 
 
 # Todas las requests tienen que tener este formato
@@ -43,6 +45,86 @@ def send_push_notification(title, body, fcm_token):
     }
     r = requests.post(FCM_ENDPOINT, headers=HEADER_FCM, json=json)
     print(r.text)
+
+
+def get_number_of_close_complaints(lat, lon):
+    query = {
+        "sort": [
+            {
+                "_geo_distance": {
+                    "location": {
+                        "lat": lat,
+                        "lon": lon
+                    },
+                    "order": "asc",
+                    "unit": "m"
+                }
+            }
+        ],
+        "from": 0,
+        "size": 10000,
+        "query": {
+            "bool": {
+                "filter": {
+                    "geo_distance": {
+                        "distance": str(COMPLAINTS_NOTIFICATION_RADIUS) + "m",
+                        "location": {
+                            "lat": lat,
+                            "lon": lon
+                        }
+                    }
+                }
+            }
+        }
+    }
+    r = requests.post(ELASTIC_SEARCH_BASE + "/complaints/_search", json=query)
+    json = r.json()
+    hits = json["hits"]["total"]
+    return hits
+
+
+def send_notification_to_close_users(lat, lon, radius):
+    title = "Fluidback"
+    body = "Hay una nueva avería cerca tuyo"
+    query = {
+        "sort": [
+            {
+                "_geo_distance": {
+                    "location": {
+                        "lat": lat,
+                        "lon": lon
+                    },
+                    "order": "asc",
+                    "unit": "m"
+                }
+            }
+        ],
+        "from": 0,
+        "size": 10000,
+        "query": {
+            "bool": {
+                "filter": {
+                    "geo_distance": {
+                        "distance": str(radius) + "m",
+                        "location": {
+                            "lat": lat,
+                            "lon": lon
+                        }
+                    }
+                }
+            }
+        }
+    }
+    r = requests.post(ELASTIC_SEARCH_BASE + "/users/_search", json=query)
+    response = Response(r.text)
+    response.headers['Content-Type'] = 'application/json'
+
+    json = r.json()
+    hits = json["hits"]["hits"]
+    for hit in hits:
+        fcm_token = hit["_source"]["fcm_token"]
+        send_push_notification(title, body, fcm_token)
+
 
 
 @app.route("/notifications", methods=['POST'])
@@ -143,7 +225,6 @@ def create_complain(id=None):
     location = {}
     location['lat'] = request.args.get('lat')
     location['lon'] = request.args.get('lon')
-
     json = {
         "image_url": image_url,
         "location": location,
@@ -156,6 +237,10 @@ def create_complain(id=None):
     post_complaint_es(complain_id, json)
     response = Response(r.text)
     response.headers['Content-Type'] = 'application/json'
+
+    if get_number_of_close_complaints(location['lat'],location['lon']) >= COMPLAINTS_NOTIFICATION_THRESHOLD:
+        send_notification_to_close_users(location['lat'], location['lon'], COMPLAINTS_NOTIFICATION_RADIUS)
+
     return response
 
 
