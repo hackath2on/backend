@@ -199,6 +199,10 @@ def register_user(id=None):
     lat = request.args.get('lat')
     lon = request.args.get('lon')
     fcmToken = request.args.get('fcm_token')
+
+    date = str(datetime.datetime.now().isoformat())
+    if "created_at" in request.args:
+        date = request.args.get("created_at")
     json = {
         "email": email,
         "location": {
@@ -206,7 +210,7 @@ def register_user(id=None):
             "lon": request.args.get("lon")
         },
         "fcm_token": fcmToken,
-        "created_at": str(datetime.datetime.now().isoformat())
+        "created_at": date
     }
     r = requests.put(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
     response = Response(r.text)
@@ -221,6 +225,11 @@ def create_complain(id=None):
     image_url = ""
     if "image_url" in request.args:
         image_url = request.args.get('image_url')
+
+    date = str(datetime.datetime.now().isoformat())
+    if "created_at" in request.args:
+        date = request.args.get("created_at")
+
     title = request.args.get('title')
     location = {}
     location['lat'] = request.args.get('lat')
@@ -230,7 +239,7 @@ def create_complain(id=None):
         "location": location,
         "title": title,
         "user_id": identifier,
-        "created_at": str(datetime.datetime.now().isoformat())
+        "created_at": date
     }
     r = requests.post(BDDD_URL + "/complains.json?auth=" + API_KEY, json=json, headers=HEADERS)
     complain_id = r.json()['name']
@@ -248,6 +257,12 @@ def create_complain(id=None):
 def answer(user_id=None, complain_id=None):
     uuid_value = str(uuid.uuid4())
     url = BDDD_URL + "complains/" + complain_id + "/answers/" + uuid_value + ".json?auth=" + API_KEY
+
+    date = str(datetime.datetime.now().isoformat())
+
+    if "created_at" in request.args:
+        date = request.args.get("created_at")
+
     json = {
         "answer": request.args.get('answer'),
         "location": {
@@ -255,7 +270,7 @@ def answer(user_id=None, complain_id=None):
             "lon": request.args.get("lon")
         },
         "userID": user_id,
-        "created_at": str(datetime.datetime.now().isoformat())
+        "created_at": date
     }
     r = requests.put(url=url, json=json, headers=HEADERS)
     response = Response(r.text)
