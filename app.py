@@ -11,7 +11,7 @@ API_KEY = 'FMnkufGpV3xvG9R2jQKjeVIi85nW5EIOP5sB5c2N'
 PROJECT_ID = 'hackath2on-562dd'
 BDDD_URL = 'https://hackath2on-562dd.firebaseio.com/'
 HEADERS = {'Authorization': 'Bearer ' + API_KEY}
-
+ELASTIC_SEARCH_BASE = "http://localhost:9200"
 
 # Todas las requests tienen que tener este formato
 # 'https://hackath2on-562dd.firebaseio.com/entity.json?access_token=FMnkufGpV3xvG9R2jQKjeVIi85nW5EIOP5sB5c2N'
@@ -26,6 +26,11 @@ def hello():
 def sample_get():
     r = requests.get(BDDD_URL + "users/SAMPLEID")
     # tratar objecto request "r"
+
+def post_user_es(id, params):
+    r = requests.post(ELASTIC_SEARCH_BASE +"/users/user/" + id, json=params)
+    print(r.text)
+
 
 
 @app.route("/users/<id>", methods=['POST'])
@@ -46,6 +51,7 @@ def register_user(id=None):
     r = requests.put(BDDD_URL + "users/" + identifier + ".json?auth=" + API_KEY, json=json, headers=HEADERS)
     response = Response(r.text)
     response.headers['Content-Type'] = 'application/json'
+    post_user_es(id, json)
     return response
 
 
